@@ -41,10 +41,10 @@
         android:id="@+id/edit_chat_id"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Channel ID (e.g. -100...)"
+        android:hint="Username (e.g. @MyChannel)"
         android:textColorHint="#88FFFFFF"
         android:textColor="#FFFFFF"
-        android:inputType="numberSigned" />
+        android:inputType="text" />
 
     <Button
         android:id="@+id/btn_pick_logo"
