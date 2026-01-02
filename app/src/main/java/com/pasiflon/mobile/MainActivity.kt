@@ -1,78 +1,57 @@
 package com.pasiflon.mobile
 
 import android.os.Bundle
-import android.view.Gravity
-import android.view.View
+import android.view.*
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
-import android.content.res.ColorStateList
+import androidx.recyclerview.widget.*
 import android.graphics.Color
 
+data class TelegramMsg(val id: Long, val sender: String, var text: String)
+
 class MainActivity : AppCompatActivity() {
-    private lateinit var statusText: TextView
-    private lateinit var inputField: EditText
-    private lateinit var actionButton: Button
-    private var currentStep = "PHONE"
+    private val messages = mutableListOf<TelegramMsg>()
+    private lateinit var adapter: MessageAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
 
-        val layout = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setBackgroundColor(Color.parseColor("#050505"))
-            gravity = Gravity.CENTER
-            setPadding(60, 60, 60, 60)
-        }
+        val recycler = findViewById<RecyclerView>(R.id.messages_recycler)
+        adapter = MessageAdapter(messages)
+        recycler.layoutManager = LinearLayoutManager(this)
+        recycler.adapter = adapter
 
-        statusText = TextView(this).apply {
-            text = "PASIFLON MOBILE\nהזן מספר טלפון:"
-            setTextColor(Color.parseColor("#00F2FF"))
-            textSize = 20f
-            setPadding(0, 0, 0, 40)
-            gravity = Gravity.CENTER
+        // סימולציה של הודעות נכנסות (במקום ה-TDLib שמתחבר ברקע)
+        for (i in 1..20) {
+            messages.add(TelegramMsg(i.toLong(), "ערוץ חדשות $i", "דיווח ראשוני מהשטח... הודעה מספר $i"))
         }
-
-        inputField = EditText(this).apply {
-            hint = "+972..."
-            setHintTextColor(Color.GRAY)
-            setTextColor(Color.WHITE)
-            gravity = Gravity.CENTER
-        }
-
-        actionButton = Button(this).apply {
-            text = "בקש קוד גישה"
-            backgroundTintList = ColorStateList.valueOf(Color.parseColor("#FF00E5"))
-            setOnClickListener { handleLogin() }
-        }
-
-        layout.addView(statusText)
-        layout.addView(inputField)
-        layout.addView(actionButton)
-        setContentView(layout)
-        
-        // ניסיון טעינת מנוע הטלגרם (TDLib)
-        try {
-            System.loadLibrary("tdjni")
-            Toast.makeText(this, "מנוע טלגרם מוכן", Toast.LENGTH_SHORT).show()
-        } catch (e: Exception) {
-            // זה יקרה אם הקובץ לא נארז נכון
-            Toast.makeText(this, "מנוע טלגרם בטעינה...", Toast.LENGTH_LONG).show()
-        }
+        adapter.notifyDataSetChanged()
     }
 
-    private fun handleLogin() {
-        val input = inputField.text.toString()
-        if (input.isEmpty()) return
-
-        if (currentStep == "PHONE") {
-            statusText.text = "הקוד נשלח!\nהזן קוד אימות:"
-            inputField.text.clear()
-            inputField.hint = "12345"
-            actionButton.text = "התחבר למערכת"
-            currentStep = "CODE"
-        } else {
-            statusText.text = "מאמת..."
-            Toast.makeText(this, "מתחבר לערוצים...", Toast.LENGTH_SHORT).show()
+    inner class MessageAdapter(private val list: List<TelegramMsg>) : RecyclerView.Adapter<MessageAdapter.ViewHolder>() {
+        class ViewHolder(v: View) : RecyclerView.ViewHolder(v) {
+            val sender = v.findViewById<TextView>(android.R.id.text1)
+            val content = v.findViewById<TextView>(android.R.id.text2)
         }
+
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+            val v = LayoutInflater.from(parent.context).inflate(android.R.layout.simple_list_item_2, parent, false)
+            return ViewHolder(v)
+        }
+
+        override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+            val msg = list[position]
+            holder.sender.text = msg.sender
+            holder.sender.setTextColor(Color.parseColor("#00F2FF"))
+            holder.content.text = msg.text
+            holder.content.setTextColor(Color.WHITE)
+            
+            holder.itemView.setOnClickListener {
+                Toast.makeText(this@MainActivity, "פותח עורך מדיה להודעה ${msg.id}", Toast.LENGTH_SHORT).show()
+                // כאן יפתח מסך הפרטים עם ה-Blur
+            }
+        }
+        override fun getItemCount() = list.size
     }
 }
