@@ -4,30 +4,20 @@ apply plugin: 'kotlin-android'
 android {
     namespace 'com.pasiflon.mobile'
     compileSdk 34
-
     defaultConfig {
         applicationId "com.pasiflon.mobile"
-        // העלינו ל-26 כדי למנוע התנגשות עם ספריות מודרניות
-        minSdk 26 
+        minSdk 24
         targetSdk 34
         versionCode 1
         versionName "1.0"
-        
-        // זה יפתור את רוב בעיות ה-AAR Metadata
         multiDexEnabled true
     }
-
-    buildTypes {
-        release {
-            minifyEnabled false
-        }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
     }
-    
-    // התעלמות משגיאות מטא-דאטה של ספריות חיצוניות אם יש כאלו
-    packagingOptions {
-        resources {
-            excludes += '/META-INF/{AL2.0,LGPL2.1}'
-        }
+    kotlinOptions {
+        jvmTarget = '17'
     }
 }
 
