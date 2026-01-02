@@ -12,6 +12,10 @@ android {
         versionCode 1
         versionName "1.0"
         multiDexEnabled true
+        
+        ndk {
+            abiFilters 'arm64-v8a', 'x86_64'
+        }
     }
 
     compileOptions {
@@ -26,6 +30,17 @@ android {
     buildFeatures {
         viewBinding false
     }
+    
+    packagingOptions {
+        pickFirst 'lib/arm64-v8a/libc++_shared.so'
+        pickFirst 'lib/x86_64/libc++_shared.so'
+    }
+}
+
+repositories {
+    google()
+    mavenCentral()
+    maven { url 'https://jitpack.io' } // חובה בשביל TDLib
 }
 
 dependencies {
@@ -38,11 +53,12 @@ dependencies {
     // ML Kit לתרגום
     implementation 'com.google.mlkit:translate:17.0.2'
     
-    // המנוע הקל של גוגל לעריכת וידאו
+    // Media3 לעריכת וידאו
     implementation "androidx.media3:media3-transformer:1.2.0"
     implementation "androidx.media3:media3-effect:1.2.0"
     implementation "androidx.media3:media3-common:1.2.0"
     
-    // רק TDLib נשאר (לצורך טלגרם)
-    implementation files('libs/tdlib.aar')
+    // TDLib: שימוש בספרייה מוכנה מ-GitHub במקום קובץ מקומי
+    // זה פותר את בעיות ההורדה והקבצים הריקים
+    implementation 'com.github.vvb2060.tdlib:tdlib:1.8.26'
 }
