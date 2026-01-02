@@ -1,8 +1,32 @@
 buildscript {
-    repositories { google(); mavenCentral() }
+    repositories {
+        // --- חומת המגן: מראה של גוגל ראשונה ---
+        // זה עוקף את שגיאות 403 Forbidden של Maven Central
+        maven { url "https://maven-central.storage-download.googleapis.com/maven2/" }
+        
+        google()
+        mavenCentral()
+    }
     dependencies {
+        // כלי הבנייה של אנדרואיד
         classpath 'com.android.tools.build:gradle:8.2.2'
-        classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.8.22'
+        // תמיכה ב-Kotlin
+        classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.0'
     }
 }
-allprojects { repositories { google(); mavenCentral() } }
+
+// הגדרה גלובלית לכל תתי-הפרויקטים (האפליקציה עצמה)
+allprojects {
+    repositories {
+        // גם כאן - המראה קודם כל!
+        maven { url "https://maven-central.storage-download.googleapis.com/maven2/" }
+        
+        google()
+        mavenCentral()
+        maven { url 'https://jitpack.io' }
+    }
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}
