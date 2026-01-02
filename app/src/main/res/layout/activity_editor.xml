@@ -9,20 +9,17 @@
         android:layout_height="match_parent"
         android:layout_above="@+id/controls_layout">
         
-        <com.pasiflon.mobile.BlurOverlayView
-            android:id="@+id/blur_overlay"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent" />
         <ImageView
             android:id="@+id/editor_image_preview"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:scaleType="fitCenter" />
-            
+
         <com.pasiflon.mobile.BlurOverlayView
             android:id="@+id/blur_overlay"
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
+            
         <ImageView
             android:id="@+id/watermark_overlay"
             android:layout_width="80dp"
