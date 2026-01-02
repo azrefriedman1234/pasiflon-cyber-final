@@ -1,6 +1,7 @@
 package com.pasiflon.mobile
 
 import android.os.Bundle
+import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import android.net.Uri
@@ -12,20 +13,26 @@ class EditorActivity : AppCompatActivity() {
         setContentView(R.layout.activity_editor)
 
         val watermarkView = findViewById<ImageView>(R.id.watermark_overlay)
-        val previewImage = findViewById<ImageView>(R.id.editor_image_preview)
+        val blurOverlay = findViewById<View>(R.id.blur_overlay)
+        val btnAddBlur = findViewById<Button>(R.id.btn_add_blur)
         val btnExport = findViewById<Button>(R.id.btn_export)
 
-        // טעינת הלוגו ששמרת בהגדרות
+        // התחלה במצב מוסתר
+        blurOverlay.visibility = View.GONE
+
         val prefs = getSharedPreferences("pasiflon_prefs", Context.MODE_PRIVATE)
-        val logoUriString = prefs.getString("logo_uri", null)
-        
-        if (logoUriString != null) {
-            watermarkView.setImageURI(Uri.parse(logoUriString))
+        prefs.getString("logo_uri", null)?.let {
+            watermarkView.setImageURI(Uri.parse(it))
+        }
+
+        btnAddBlur.setOnClickListener {
+            blurOverlay.visibility = View.VISIBLE
+            Toast.makeText(this, "גרור את האצבע למיקום הטשטוש", Toast.LENGTH_SHORT).show()
         }
 
         btnExport.setOnClickListener {
-            Toast.makeText(this, "מעבד וידאו עם סימן מים...", Toast.LENGTH_LONG).show()
-            // כאן יופעל ה-Media3 Transformer
+            Toast.makeText(this, "מייצר וידאו סופי עם לוגו וטשטוש...", Toast.LENGTH_LONG).show()
+            // כאן נחבר את ה-Media3 Transformer בשלב הבא
         }
     }
 }
