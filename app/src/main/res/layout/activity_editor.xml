@@ -18,15 +18,15 @@
         <com.pasiflon.mobile.BlurOverlayView
             android:id="@+id/blur_overlay"
             android:layout_width="match_parent"
-            android:layout_height="match_parent" />
+            android:layout_height="match_parent"
+            android:background="@android:color/transparent" />
             
         <ImageView
             android:id="@+id/watermark_overlay"
             android:layout_width="80dp"
             android:layout_height="80dp"
-            android:layout_gravity="top|right"
             android:layout_margin="15dp"
-            android:alpha="0.7" />
+            android:alpha="0.8" />
     </FrameLayout>
 
     <LinearLayout
@@ -43,7 +43,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="הוסף טשטוש"
+            android:text="הפעל מצב טשטוש"
             android:backgroundTint="#FF00E5" />
             
         <Button
