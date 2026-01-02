@@ -47,10 +47,10 @@ dependencies {
     // ML Kit
     implementation 'com.google.mlkit:translate:17.0.2'
     
-    // Media3 (עריכת וידאו)
-    implementation "androidx.media3:media3-transformer:1.2.0"
-    implementation "androidx.media3:media3-effect:1.2.0"
-    implementation "androidx.media3:media3-common:1.2.0"
+    // שדרוג ל-1.3.0 כדי לקבל את setAlpha ואת Effects
+    implementation "androidx.media3:media3-transformer:1.3.0"
+    implementation "androidx.media3:media3-effect:1.3.0"
+    implementation "androidx.media3:media3-common:1.3.0"
     
     // TDLib (קובץ מקומי)
     implementation files('libs/tdlib.aar')
