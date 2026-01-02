@@ -7,8 +7,9 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.*
 import android.graphics.Color
 import android.content.Intent
+import android.content.Context
 
-data class TelegramMsg(val id: Long, val sender: String, var text: String)
+data class TelegramMsg(val id: Long, val sender: String, var text: String, val time: Long)
 
 class MainActivity : AppCompatActivity() {
     private val messages = mutableListOf<TelegramMsg>()
@@ -18,6 +19,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        // כפתור הגדרות
         findViewById<ImageButton>(R.id.btn_settings).setOnClickListener {
             startActivity(Intent(this, SettingsActivity::class.java))
         }
@@ -27,10 +29,24 @@ class MainActivity : AppCompatActivity() {
         recycler.layoutManager = LinearLayoutManager(this)
         recycler.adapter = adapter
 
-        // הודעות לדוגמה בערבית לבדיקת התרגום
-        messages.add(TelegramMsg(1, "ערוץ עזה", "عاجל: انفجارات في شمال قطاع غزة"))
-        messages.add(TelegramMsg(2, "חדשות חוץ", "Breaking news from the border"))
-        adapter.notifyDataSetChanged()
+        // טעינת API וחיבור
+        val prefs = getSharedPreferences("pasiflon_prefs", Context.MODE_PRIVATE)
+        val apiId = prefs.getString("api_id", "") ?: ""
+        val apiHash = prefs.getString("api_hash", "") ?: ""
+        TelegramManager.initClient(this, apiId, apiHash)
+
+        // פונקציה להוספת הודעה חדשה לראש הטבלה (מוגבל ל-100)
+        addNewMessage("מערכת", "ברוך הבא לפסיפלונט. המתן לסנכרון הודעות...")
+    }
+
+    private fun addNewMessage(sender: String, text: String) {
+        val newMessage = TelegramMsg(System.currentTimeMillis(), sender, text, System.currentTimeMillis())
+        messages.add(0, newMessage) // הוספה להתחלה
+        if (messages.size > 100) {
+            messages.removeAt(messages.size - 1) // הסרת הישנה ביותר
+        }
+        adapter.notifyItemInserted(0)
+        findViewById<RecyclerView>(R.id.messages_recycler).scrollToPosition(0)
     }
 
     inner class MessageAdapter(private val list: List<TelegramMsg>) : RecyclerView.Adapter<MessageAdapter.ViewHolder>() {
@@ -51,7 +67,6 @@ class MainActivity : AppCompatActivity() {
             holder.content.text = msg.text
             holder.content.setTextColor(Color.WHITE)
             
-            // לחיצה ארוכה מתרגמת לעברית
             holder.itemView.setOnLongClickListener {
                 TranslationManager.translateToHebrew(msg.text) { translated ->
                     msg.text = translated
@@ -60,7 +75,6 @@ class MainActivity : AppCompatActivity() {
                 true
             }
 
-            // לחיצה קצרה פותחת עריכת מדיה
             holder.itemView.setOnClickListener {
                 startActivity(Intent(this@MainActivity, EditorActivity::class.java))
             }
