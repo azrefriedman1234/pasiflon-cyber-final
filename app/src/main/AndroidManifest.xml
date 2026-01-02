@@ -6,6 +6,7 @@
     
     <application
         android:label="פסיפלונט מובייל"
+        android:icon="@mipmap/ic_launcher"
         android:theme="@style/Theme.Pasiflon"
         tools:replace="android:label">
         
