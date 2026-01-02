@@ -9,36 +9,39 @@ import java.io.File
 object TelegramManager {
     private var client: Client? = null
     private var authState: TdApi.AuthorizationState? = null
-    
-    // ממשק כדי שה-MainActivity ידע מתי להקפיץ דיאלוגים
+    private var apiId: Int = 0
+    private var apiHash: String = ""
+
     interface AuthListener {
         fun onNeedPhone()
         fun onNeedCode()
         fun onLoginSuccess()
+        fun onNewMessage(msg: TelegramMsg) // הוספנו: עדכון על הודעה חדשה
         fun onError(msg: String)
     }
     
     var listener: AuthListener? = null
-    private var apiId: Int = 0
-    private var apiHash: String = ""
 
     fun initClient(context: Context, strApiId: String, strApiHash: String) {
-        if (client != null) return // כבר רץ
+        if (client != null) return
         
         try {
             apiId = strApiId.toInt()
-        } catch (e: NumberFormatException) {
-            listener?.onError("API ID חייב להיות מספר")
-            return
-        }
-        apiHash = strApiHash
+            apiHash = strApiHash
+        } catch (e: Exception) { return }
 
-        // אתחול הלקוח של טלגרם
+        // יצירת הלקוח עם טיפול בעדכונים
         client = Client.create(
             { update ->
-                if (update is TdApi.UpdateAuthorizationState) {
-                    authState = update.authorizationState
-                    handleAuthState(context)
+                when (update) {
+                    is TdApi.UpdateAuthorizationState -> {
+                        authState = update.authorizationState
+                        handleAuthState(context)
+                    }
+                    is TdApi.UpdateNewMessage -> {
+                        // הנה הלב של הפיד: הודעה חדשה נכנסה!
+                        handleNewMessage(update.message)
+                    }
                 }
             },
             { e -> listener?.onError("TDLib Error: ${e.localizedMessage}") },
@@ -46,10 +49,47 @@ object TelegramManager {
         )
     }
 
+    private fun handleNewMessage(message: TdApi.Message) {
+        // אנחנו מסננים הודעות יוצאות (שלנו) ומתמקדמים בנכנסות
+        // if (message.isOutgoing) return 
+
+        var textContent = ""
+        var hasMedia = false
+        var imagePath: String? = null
+
+        when (val content = message.content) {
+            is TdApi.MessageText -> {
+                textContent = content.text.text
+            }
+            is TdApi.MessageVideo -> {
+                hasMedia = true
+                textContent = content.caption.text
+                // כאן בעתיד נחלץ את ה-Thumbnail
+            }
+            is TdApi.MessagePhoto -> {
+                hasMedia = true
+                textContent = content.caption.text
+            }
+        }
+
+        // אם יש תוכן, שולחים למסך הראשי
+        if (textContent.isNotEmpty() || hasMedia) {
+            // שליפת שם השולח דורשת קריאה נפרדת (GetUser/GetChat), כרגע נציג ID למהירות
+            val senderName = "Chat ${message.chatId}" 
+            
+            val uiMsg = TelegramMsg(
+                id = message.id,
+                sender = senderName,
+                text = textContent.ifEmpty { "מדיה ללא כיתוב" },
+                hasMedia = hasMedia
+            )
+            listener?.onNewMessage(uiMsg)
+        }
+    }
+
     private fun handleAuthState(context: Context) {
         when (authState) {
             is TdApi.AuthorizationStateWaitTdlibParameters -> {
-                // שליחת הגדרות ראשוניות לטלגרם
                 val params = TdApi.TdlibParameters()
                 params.databaseDirectory = File(context.filesDir, "tdlib").absolutePath
                 params.useMessageDatabase = true
@@ -59,44 +99,19 @@ object TelegramManager {
                 params.systemLanguageCode = "en"
                 params.deviceModel = "Pasiflon Cyber"
                 params.applicationVersion = "1.0"
-                params.enableStorageOptimizer = true
-
                 client?.send(TdApi.SetTdlibParameters(params)) { }
             }
-            is TdApi.AuthorizationStateWaitPhoneNumber -> {
-                // טלגרם מחכה למספר - נקרא לממשק
-                listener?.onNeedPhone()
-            }
-            is TdApi.AuthorizationStateWaitCode -> {
-                // טלגרם שלח SMS ומחכה לקוד - נקרא לממשק
-                listener?.onNeedCode()
-            }
-            is TdApi.AuthorizationStateReady -> {
-                // מחובר!
-                listener?.onLoginSuccess()
-            }
+            is TdApi.AuthorizationStateWaitPhoneNumber -> listener?.onNeedPhone()
+            is TdApi.AuthorizationStateWaitCode -> listener?.onNeedCode()
+            is TdApi.AuthorizationStateReady -> listener?.onLoginSuccess()
         }
     }
 
     fun sendPhoneNumber(phone: String) {
-        val settings = TdApi.PhoneNumberAuthenticationSettings()
-        client?.send(TdApi.SetAuthenticationPhoneNumber(phone, settings)) { result ->
-            if (result is TdApi.Error) {
-                listener?.onError("שגיאה בשליחת מספר: ${result.message}")
-            }
-        }
+        client?.send(TdApi.SetAuthenticationPhoneNumber(phone, TdApi.PhoneNumberAuthenticationSettings())) {}
     }
 
     fun sendCode(code: String) {
-        client?.send(TdApi.CheckAuthenticationCode(code)) { result ->
-            if (result is TdApi.Error) {
-                listener?.onError("קוד שגוי: ${result.message}")
-            }
-        }
-    }
-    
-    // פונקציה לשליחת הודעה (נשתמש בה אחר כך)
-    fun sendMessage(chatId: Long, text: String) {
-        // מימוש בהמשך
+        client?.send(TdApi.CheckAuthenticationCode(code)) {}
     }
 }

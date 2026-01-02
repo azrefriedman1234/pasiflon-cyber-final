@@ -18,7 +18,8 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import android.graphics.Color
 
-data class TelegramMsg(val id: Long, val sender: String, var text: String, val hasMedia: Boolean = false)
+// הוספנו שדה 'time' לשימוש עתידי
+data class TelegramMsg(val id: Long, val sender: String, var text: String, val hasMedia: Boolean = false, val time: Long = System.currentTimeMillis())
 
 class MainActivity : AppCompatActivity(), TelegramManager.AuthListener {
     private val messages = mutableListOf<TelegramMsg>()
@@ -44,13 +45,11 @@ class MainActivity : AppCompatActivity(), TelegramManager.AuthListener {
         recycler.layoutManager = LinearLayoutManager(this)
         recycler.adapter = adapter
 
-        // רישום להאזנה לאירועי התחברות
         TelegramManager.listener = this
     }
 
     override fun onResume() {
         super.onResume()
-        // הפעלת המנוע עם ה-API מההגדרות
         val prefs = getSharedPreferences("pasiflon_prefs", Context.MODE_PRIVATE)
         val apiId = prefs.getString("api_id", "") ?: ""
         val apiHash = prefs.getString("api_hash", "") ?: ""
@@ -62,75 +61,63 @@ class MainActivity : AppCompatActivity(), TelegramManager.AuthListener {
         }
     }
 
-    // --- מימוש ה-AuthListener (הקולות מטלגרם) ---
-
-    override fun onNeedPhone() {
-        runOnUiThread { showPhoneLoginDialog() }
-    }
-
-    override fun onNeedCode() {
-        runOnUiThread { 
-            // סוגרים את דיאלוג הטלפון אם פתוח ופותחים קוד
-            loginDialog?.dismiss()
-            showCodeLoginDialog() 
+    // --- האזנה להודעות חדשות ---
+    override fun onNewMessage(msg: TelegramMsg) {
+        runOnUiThread {
+            messages.add(0, msg) // הוספה לראש הרשימה
+            if (messages.size > 100) messages.removeAt(messages.size - 1) // שמירה על גודל קבוע
+            adapter.notifyItemInserted(0)
+            findViewById<RecyclerView>(R.id.messages_recycler).scrollToPosition(0)
         }
     }
 
+    override fun onNeedPhone() { runOnUiThread { showPhoneLoginDialog() } }
+    override fun onNeedCode() { runOnUiThread { loginDialog?.dismiss(); showCodeLoginDialog() } }
+    
     override fun onLoginSuccess() {
         runOnUiThread {
             loginDialog?.dismiss()
-            Toast.makeText(this, "מחובר לטלגרם בהצלחה!", Toast.LENGTH_LONG).show()
+            // שומרים סטטוס אבל לא מציגים הודעה מציקה כל פעם
             getSharedPreferences("pasiflon_prefs", Context.MODE_PRIVATE)
                 .edit().putBoolean("is_logged_in", true).apply()
         }
     }
 
-    override fun onError(msg: String) {
-        runOnUiThread {
-            Toast.makeText(this, "שגיאה: $msg", Toast.LENGTH_LONG).show()
-        }
-    }
-
-    // --- דיאלוגים ---
+    override fun onError(msg: String) { runOnUiThread { Toast.makeText(this, "שגיאה: $msg", Toast.LENGTH_LONG).show() } }
 
     private fun showMissingApiDialog() {
         if (loginDialog?.isShowing == true) return 
         AlertDialog.Builder(this)
-            .setTitle("חסר API")
-            .setMessage("אנא הגדר API ID ו-Hash בהגדרות")
+            .setTitle("הגדרות נדרשות")
+            .setMessage("נא להזין API ID ו-Hash")
             .setPositiveButton("הגדרות") { _, _ -> startActivity(Intent(this, SettingsActivity::class.java)) }
-            .setCancelable(false)
-            .show()
+            .setCancelable(false).show()
     }
 
     private fun showPhoneLoginDialog() {
         if (loginDialog?.isShowing == true) return
         val builder = AlertDialog.Builder(this)
         builder.setTitle("התחברות לטלגרם")
-        
         val input = EditText(this)
         input.hint = "מספר טלפון (+972...)"
         input.inputType = android.text.InputType.TYPE_CLASS_PHONE
         builder.setView(input)
-
         builder.setPositiveButton("שלח") { _, _ ->
             val phone = input.text.toString()
             if (phone.isNotEmpty()) TelegramManager.sendPhoneNumber(phone)
         }
-        builder.setNeutralButton("הגדרות API") { _, _ -> startActivity(Intent(this, SettingsActivity::class.java)) }
+        builder.setNeutralButton("הגדרות") { _, _ -> startActivity(Intent(this, SettingsActivity::class.java)) }
         builder.setCancelable(false)
         loginDialog = builder.show()
     }
 
     private fun showCodeLoginDialog() {
         val builder = AlertDialog.Builder(this)
-        builder.setTitle("הזן קוד אימות")
-        
+        builder.setTitle("קוד אימות")
         val input = EditText(this)
-        input.hint = "קוד בן 5 ספרות"
+        input.hint = "קוד 5 ספרות"
         input.inputType = android.text.InputType.TYPE_CLASS_NUMBER
         builder.setView(input)
-
         builder.setPositiveButton("אמת") { _, _ ->
             val code = input.text.toString()
             if (code.isNotEmpty()) TelegramManager.sendCode(code)
@@ -150,7 +137,6 @@ class MainActivity : AppCompatActivity(), TelegramManager.AuthListener {
         }
     }
     
-    // Adapter נשאר זהה...
     inner class MessageAdapter(private val list: List<TelegramMsg>) : RecyclerView.Adapter<MessageAdapter.ViewHolder>() {
         inner class ViewHolder(v: View) : RecyclerView.ViewHolder(v) {
             val sender: TextView = v.findViewById(android.R.id.text1)
