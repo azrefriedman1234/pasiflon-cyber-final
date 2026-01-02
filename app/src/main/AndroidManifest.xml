@@ -9,6 +9,7 @@
         android:icon="@mipmap/ic_launcher"
         android:theme="@style/Theme.Pasiflon"
         tools:replace="android:label">
+        <activity android:name=".SettingsActivity" />
         
         <activity android:name=".MainActivity" android:exported="true">
             <intent-filter>

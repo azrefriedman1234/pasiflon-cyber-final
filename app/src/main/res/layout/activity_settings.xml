@@ -1,0 +1,50 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#050505"
+    android:padding="20dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="הגדרות מערכת"
+        android:textColor="#00F2FF"
+        android:textSize="22sp"
+        android:layout_gravity="center"
+        android:layout_marginBottom="30dp" />
+
+    <EditText
+        android:id="@+id/edit_api_id"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Telegram API ID"
+        android:textColorHint="#44FFFFFF"
+        android:textColor="#FFFFFF"
+        android:layout_marginBottom="15dp" />
+
+    <EditText
+        android:id="@+id/edit_api_hash"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Telegram API Hash"
+        android:textColorHint="#44FFFFFF"
+        android:textColor="#FFFFFF"
+        android:layout_marginBottom="25dp" />
+
+    <Button
+        android:id="@+id/btn_pick_logo"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="בחר לוגו סימן מים (תמונה)"
+        android:backgroundTint="#FF00E5"
+        android:layout_marginBottom="40dp" />
+
+    <Button
+        android:id="@+id/btn_save"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="שמור הגדרות"
+        android:backgroundTint="#00F2FF"
+        android:textColor="#050505" />
+</LinearLayout>
