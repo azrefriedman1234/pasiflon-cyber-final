@@ -14,7 +14,6 @@ import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.media3.common.MediaItem
-import androidx.media3.common.Effect 
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.effect.OverlayEffect
 import androidx.media3.effect.BitmapOverlay
@@ -25,11 +24,10 @@ import androidx.media3.transformer.Composition
 import androidx.media3.transformer.EditedMediaItem
 import androidx.media3.transformer.ExportException
 import androidx.media3.transformer.ExportResult
-import androidx.media3.common.Effects
 import com.google.common.collect.ImmutableList
 import java.io.File
 
-@UnstableApi // סימון נדרש לשימוש ב-Transformer
+@UnstableApi
 class EditorActivity : AppCompatActivity() {
     private var isProcessing = false
     private var videoUriString: String? = null
@@ -63,15 +61,8 @@ class EditorActivity : AppCompatActivity() {
 
         watermarkView.setOnTouchListener { view, event ->
             when (event.action) {
-                MotionEvent.ACTION_DOWN -> {
-                    dX = view.x - event.rawX
-                    dY = view.y - event.rawY
-                    true
-                }
-                MotionEvent.ACTION_MOVE -> {
-                    view.animate().x(event.rawX + dX).y(event.rawY + dY).setDuration(0).start()
-                    true
-                }
+                MotionEvent.ACTION_DOWN -> { dX = view.x - event.rawX; dY = view.y - event.rawY; true }
+                MotionEvent.ACTION_MOVE -> { view.animate().x(event.rawX + dX).y(event.rawY + dY).setDuration(0).start(); true }
                 else -> false
             }
         }
@@ -95,7 +86,7 @@ class EditorActivity : AppCompatActivity() {
             if (parentWidth == 0f) return@setOnClickListener
 
             isProcessing = true
-            Toast.makeText(this, "מייצר שכבות צנזורה ולוגו...", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "מייצר שכבות...", Toast.LENGTH_SHORT).show()
 
             val logoX = watermarkView.x / parentWidth
             val logoY = watermarkView.y / parentHeight
@@ -130,7 +121,7 @@ class EditorActivity : AppCompatActivity() {
         val canvas = Canvas(bmp)
         val paint = Paint()
         paint.color = Color.BLACK
-        paint.alpha = 128
+        paint.alpha = 180 // שקיפות
         canvas.drawRect(0f, 0f, 100f, 100f, paint)
         return bmp
     }
@@ -141,13 +132,13 @@ class EditorActivity : AppCompatActivity() {
         blurBitmap: Bitmap?, blurX: Float, blurY: Float, blurW: Float, blurH: Float
     ) {
         val outputFile = File(getExternalFilesDir(null), "pasiflon_export_${System.currentTimeMillis()}.mp4")
-        
-        // שימוש ב-TextureOverlay במקום BitmapOverlay הגנרי כדי לרצות את הקומפיילר
         val overlays = ImmutableList.builder<TextureOverlay>()
+
+        // בגרסה 1.2.0: OverlaySettings פשוט ללא setAlpha אם הוא לא נתמך, או שימוש בסיסי
+        // אנחנו נשתמש בברירת המחדל כי ה-Bitmap עצמו כבר מכיל אלפא (שקיפות)
 
         if (blurBitmap != null) {
             val blurSettings = OverlaySettings.Builder()
-                .setAlpha(0.5f)
                 .setBackgroundFrameAnchor((blurX * 2) - 1f, (blurY * 2) - 1f)
                 .setScale(blurW * 2, blurH * 2)
                 .build()
@@ -160,7 +151,6 @@ class EditorActivity : AppCompatActivity() {
                 val normalizedX = (logoX * 2) - 1f + 0.1f
                 val normalizedY = (logoY * 2) - 1f + 0.1f 
                 val logoSettings = OverlaySettings.Builder()
-                    .setAlpha(0.9f)
                     .setBackgroundFrameAnchor(normalizedX, normalizedY)
                     .setScale(0.2f, 0.2f)
                     .build()
@@ -168,18 +158,12 @@ class EditorActivity : AppCompatActivity() {
             }
         }
 
-        // עטיפת ה-OverlayEffect ברשימה מפורשת
         val overlayEffect = OverlayEffect(overlays.build())
         
-        // יצירת רשימת אפקטים לוידאו בלבד
-        val videoEffects = ImmutableList.of<Effect>(overlayEffect)
-        
-        // שימוש באובייקט Effects החדש של Media3 1.2.0
-        val effects = Effects(ImmutableList.of(), videoEffects)
-
+        // בנייה תואמת לגרסה 1.2.0 - רשימה ישירה של אפקטים
         val mediaItem = MediaItem.fromUri(videoUri)
         val editedMediaItem = EditedMediaItem.Builder(mediaItem)
-            .setEffects(effects) // העברת אובייקט Effects התקין
+            .setEffects(ImmutableList.of(overlayEffect)) 
             .build()
 
         val transformer = Transformer.Builder(this)
